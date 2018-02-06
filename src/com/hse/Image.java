@@ -2,15 +2,14 @@ package com.hse;
 
 import javax.imageio.ImageIO;
 import javax.print.DocFlavor;
+import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.io.*;
-
-import static com.hse.Options.ascii_palette;
-import static com.hse.Options.redweight;
-import static com.hse.Options.blueweight;
-import static com.hse.Options.greenweight;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.*;
 
 import static com.hse.ExceptionHandler.PrintException;
+import static com.hse.Options.*;
 
 class RGB {
     int red;
@@ -80,7 +79,7 @@ public class Image {
         return true;
     }
 
-    public boolean PrintImageToFile(String path, boolean isDoubled) {
+    public boolean PrintImageToFile(String path) {
         if (!isImageReady) {
             PrintException("Image not ready ", "Image");
             return false;
@@ -89,7 +88,7 @@ public class Image {
 
         try {
             writer = new PrintStream(new FileOutputStream(path));
-            PrintImageToFile(writer, isDoubled);
+            PrintImageToFile(writer);
             try {writer.close();} catch (Exception ex_) {/*ignore*/}
         } catch (IOException ex) {
             PrintException("Couldn't write into file " + path, "Image");
@@ -100,7 +99,7 @@ public class Image {
         return true;
     }
 
-    public boolean PrintImageToFile(PrintStream writer, boolean isDoubled) {
+    public boolean PrintImageToFile(PrintStream writer) {
         if (!isImageReady) {
             PrintException("Image not ready ", "Image");
             return false;
@@ -109,7 +108,9 @@ public class Image {
             for (int j = 0; j < height; ++j) {
                 String str = "";
                 for (int i = 0; i < width; ++i) {
-                    RGB current = GetFormattedPixel(i, j);
+                    int x = i;
+                    int y = j;
+                    RGB current = GetFormattedPixel(x, y);
                     int index = (int)(current.grey * (ascii_palette.length() - 1) / 255f);
                     str = str + ascii_palette.charAt(index) + (isDoubled ? ascii_palette.charAt(index) : "");
                 }
@@ -120,14 +121,14 @@ public class Image {
         return true;
     }
 
-    public boolean PrintColoredImageToFile(String path, boolean fill, boolean isSpace, boolean isDoubled) {
+    public boolean PrintColoredImageToFile(String path) {
         if (!isImageReady) {
             PrintException("Image not ready ", "Image");
             return false;
         }
         try {
             PrintStream writer = new PrintStream( new FileOutputStream(new File(path)));
-            return PrintColoredImageToFile(writer, fill, isSpace, isDoubled);
+            return PrintColoredImageToFile(writer);
         } catch (IOException ex) {
             PrintException("Couldn't write into given file ", "Image");
             return false;
@@ -142,7 +143,7 @@ public class Image {
         try {
             PrintStream writer = new PrintStream(new PrintStream(
                 new FileOutputStream(F)));
-            PrintColoredImageToFile(writer, fill, isSpace, isDoubled);
+            PrintColoredImageToFile(writer);
         } catch (IOException ex) {
             PrintException("Couldn't write into given file ", "Image");
             return false;
@@ -151,7 +152,7 @@ public class Image {
         return true;
     }
 
-    public boolean PrintColoredImageToFile(PrintStream F, boolean fill, boolean isSpace, boolean isDoubled) {
+    public boolean PrintColoredImageToFile(PrintStream F) {
         if (!isImageReady) {
             PrintException("Image not ready ", "Image");
             return false;
@@ -160,7 +161,9 @@ public class Image {
             for (int j = 0; j < height; ++j) {
                 String str = "";
                 for (int i = 0; i < width; ++i) {
-                    RGB current = GetFormattedPixel(i, j);
+                    int x = i;
+                    int y = j;
+                    RGB current = GetFormattedPixel(x, y);
                     int index = (int)(current.grey * (ascii_palette.length() - 1) / 255f);
 
                     float t = 0.01f * 255; // threshold
@@ -179,9 +182,9 @@ public class Image {
                     else if ( G-t>R && B-t>R && B+G>i )   colr = ANSI_CYAN; // cyan
                     else if ( R+G+B>=3.0f*Y )             colr = ANSI_WHITE; // white
                     //else              colr = ANSI_WHITE; // white
-                    if (isSpace)
+                    if (isSpaced)
                         ch = ' ';
-                    if (fill)
+                    if (isFilled)
                         colr += 10;
                     String formatted = String.format("\u001B[%dm", colr);
                     str = str + formatted + ch + (isDoubled ? ch : "") + ANSI_RESET;
@@ -195,10 +198,40 @@ public class Image {
         return true;
     }
 
+    private void rotateImage(double angle) {
+        double angle_ = Math.toRadians(angle);
+        AffineTransform tx = new AffineTransform();
+        tx.rotate(angle_, _Image.getWidth() / 2, _Image.getHeight() / 2);
+        AffineTransformOp op = new AffineTransformOp(tx,
+                AffineTransformOp.TYPE_BILINEAR);
+        _Image = op.filter(_Image, null);
+    }
+
     public boolean ConvertToAscii(String path) {
         if (!ReadFromDisk(path)) {
             PrintException("Applications Crashed", "Image");
             return false;
+        }
+        AffineTransform tx;
+        AffineTransformOp op;
+        if (isFlippedVertical) {
+            tx = AffineTransform.getScaleInstance(1, -1);
+            tx.translate(0, -_Image.getHeight(null));
+            op = new AffineTransformOp(tx, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
+            _Image = op.filter(_Image, null);
+        }
+
+
+// Flip the image horizontally
+        if (isFlippedHorisontal) {
+            tx = AffineTransform.getScaleInstance(-1, 1);
+            tx.translate(-_Image.getWidth(null), 0);
+            op = new AffineTransformOp(tx, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
+            _Image = op.filter(_Image, null);
+        }
+
+        if (isRotating) {
+            rotateImage(RotAngle);
         }
 
         return true;
