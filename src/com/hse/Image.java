@@ -2,11 +2,13 @@ package com.hse;
 
 import javax.imageio.ImageIO;
 import javax.print.DocFlavor;
+import java.awt.*;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.*;
+import java.util.ArrayList;
 
 import static com.hse.ExceptionHandler.PrintException;
 import static com.hse.Options.*;
@@ -32,16 +34,25 @@ public class Image {
     public static final int ANSI_GREY = 37;
     public static final int ANSI_WHITE = 30;
 
-    BufferedImage _Image;
+    ArrayList<ArrayList<RGB>> data;
     int width;
     int height;
     private boolean isImageReady = false;
 
     public boolean ReadFromDisk(String path) {
         try {
+            BufferedImage _Image;
             _Image = ImageIO.read(new File(path));
             width = _Image.getWidth();
             height = _Image.getHeight();
+            data = new ArrayList<>();
+            for (int j = 0; j < height; ++j) {
+                ArrayList<RGB> sub = new ArrayList<RGB>();
+                for (int i = 0; i < width; ++i) {
+                    sub.add(GetFormattedPixel(_Image, i, j));
+                }
+                data.add(sub);
+            }
             isImageReady = true;
             return true;
         }
@@ -52,7 +63,7 @@ public class Image {
         }
     }
 
-    private RGB GetFormattedPixel(int x, int y) {
+    private RGB GetFormattedPixel(BufferedImage _Image, int x, int y) {
         int rgb = _Image.getRGB(x, y);
         RGB pixel = new RGB();
         pixel.red = (rgb >> 16) & 0xFF;
@@ -69,7 +80,7 @@ public class Image {
         }
         for (int j = 0; j < height; ++j) {
             for (int i = 0; i < width; ++i) {
-                RGB current = GetFormattedPixel(i, j);
+                RGB current = data.get(i).get(j);
                 int index = (int)(current.grey * (ascii_palette.length() - 1) / 255f);
                 System.out.print(ascii_palette.charAt(index));
                 System.out.print(ascii_palette.charAt(index));
@@ -110,7 +121,7 @@ public class Image {
                 for (int i = 0; i < width; ++i) {
                     int x = i;
                     int y = j;
-                    RGB current = GetFormattedPixel(x, y);
+                    RGB current = data.get(j).get(i);
                     int index = (int)(current.grey * (ascii_palette.length() - 1) / 255f);
                     str = str + ascii_palette.charAt(index) + (isDoubled ? ascii_palette.charAt(index) : "");
                 }
@@ -163,7 +174,7 @@ public class Image {
                 for (int i = 0; i < width; ++i) {
                     int x = i;
                     int y = j;
-                    RGB current = GetFormattedPixel(x, y);
+                    RGB current = data.get(j).get(i);
                     int index = (int)(current.grey * (ascii_palette.length() - 1) / 255f);
 
                     float t = 0.01f * 255; // threshold
@@ -201,10 +212,39 @@ public class Image {
     private void rotateImage(double angle) {
         double angle_ = Math.toRadians(angle);
         AffineTransform tx = new AffineTransform();
-        tx.rotate(angle_, _Image.getWidth() / 2, _Image.getHeight() / 2);
-        AffineTransformOp op = new AffineTransformOp(tx,
-                AffineTransformOp.TYPE_BILINEAR);
-        _Image = op.filter(_Image, null);
+        tx.rotate(angle_, (width - 1) / 2, (height - 1) / 2);
+        Transform(tx);
+    }
+
+    public int round (float x, float b) {
+        if (x < 0)
+            x = 0;
+        if (x > b)
+            x = b;
+        return (int) x;
+    }
+
+    private void Transform(AffineTransform tx) {
+
+        ArrayList<ArrayList<RGB>> _data = new ArrayList<>();
+        float[] src = new float[width * height * 2];
+        float[] dst = new float[width * height * 2];
+        for (int j = 0; j < height; ++j) {
+            for (int i = 0; i < width; ++i) {
+                src[(width * j + i) * 2] = i;
+                src[(width * j + i) * 2 + 1] = j;
+            }
+        }
+        tx.transform(src, 0, dst, 0, width * height);
+        for (int j = 0; j < height; ++j) {
+            ArrayList<RGB> sub = new ArrayList<>();
+            for (int i = 0; i < width; ++i) {
+                sub.add(data.get(round(dst[(width * j + i) * 2 + 1], height - 1))
+                        .get(round(dst[(width * j + i) * 2], width - 1)));
+            }
+            _data.add(sub);
+        }
+        data = _data;
     }
 
     public boolean ConvertToAscii(String path) {
@@ -216,18 +256,16 @@ public class Image {
         AffineTransformOp op;
         if (isFlippedVertical) {
             tx = AffineTransform.getScaleInstance(1, -1);
-            tx.translate(0, -_Image.getHeight(null));
-            op = new AffineTransformOp(tx, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
-            _Image = op.filter(_Image, null);
+            tx.translate(0, -(height - 1));
+            Transform(tx);
         }
 
 
 // Flip the image horizontally
         if (isFlippedHorisontal) {
             tx = AffineTransform.getScaleInstance(-1, 1);
-            tx.translate(-_Image.getWidth(null), 0);
-            op = new AffineTransformOp(tx, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
-            _Image = op.filter(_Image, null);
+            tx.translate(-(width - 1), 0);
+            Transform(tx);
         }
 
         if (isRotating) {
