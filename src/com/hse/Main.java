@@ -6,6 +6,17 @@ import javax.print.DocFlavor;
 
 import static com.hse.ExceptionHandler.PrintException;
 
+import static com.hse.Options.isColored;
+import static com.hse.Options.isDoubled;
+import static com.hse.Options.ToConsole;
+import static com.hse.Options.isFilled;
+import static com.hse.Options.isFlippedHorisontal;
+import static com.hse.Options.isFlippedVertical;
+import static com.hse.Options.isSpaced;
+import static com.hse.Options.isRotating;
+import static com.hse.Options.RotAngle;
+//import static com.hse.Options.isColored;
+
 public class Main {
 
     public static void PrintHelp() {
@@ -16,6 +27,9 @@ public class Main {
                 "[-c, --colored - allow writing colors in images]\n" +
                 "[-h, --help    - show this help]\n" +
                 "[-d, --no-double    - off double char mode]\n" +
+                "[-fh, --flip-horisontally - flip image horisontally]\n" +
+                "[-fv, --flip-vertically - flip image vertically]" +
+                "[-r <angle>, --rotate <angle> - rotate image by angle\n" +
                 "if no outputFile specified, output will be written in console\n");
     }
 
@@ -23,11 +37,6 @@ public class Main {
         Image image = new Image();
         String Input = "";
         String Output = "";
-        boolean ToConsole = false;
-        boolean isFilled = false;
-        boolean isSpaced = false;
-        boolean isColored = false;
-        boolean isDoubled = true;
         if (args.length < 1) {
             PrintException("Couldn't find path in args", "Main");
             PrintHelp();
@@ -58,8 +67,31 @@ public class Main {
                         break;
                     }
                     case "-d":
-                    case "--no-double ": {
-                        isDoubled = true;
+                    case "--no-double": {
+                        isDoubled = false;
+                        break;
+                    }
+                    case "-fh":
+                    case "--flip-horisontally": {
+                        isFlippedHorisontal = true;
+                        break;
+                    }
+                    case "-fv":
+                    case "--flip-vertically": {
+                        isFlippedVertical = true;
+                        break;
+                    }
+                    case "-r":
+                    case "--rotate": {
+                        i++;
+                        if (i == args.length) {
+                            PrintException("Please specify angle to argument -r/--rotate. Application stopped", "Main");
+                            PrintHelp();
+                            return;
+                        } else {
+                            RotAngle = Float.parseFloat(args[i]);
+                            isRotating = true;
+                        }
                         break;
                     }
                     case "-h":
@@ -83,14 +115,14 @@ public class Main {
         image.ConvertToAscii(Input);
         if (ToConsole) {
             if (isColored)
-                image.PrintColoredImageToFile(System.out, isFilled, isSpaced, isDoubled);
+                image.PrintColoredImageToFile(System.out);
             else
-                image.PrintImageToFile(System.out, isDoubled);
+                image.PrintImageToFile(System.out);
         } else {
             if (isColored)
-                image.PrintColoredImageToFile(Output, isFilled, isSpaced, isDoubled);
+                image.PrintColoredImageToFile(Output);
             else
-                image.PrintImageToFile(Output, isDoubled);
+                image.PrintImageToFile(Output);
         }
     }
 }

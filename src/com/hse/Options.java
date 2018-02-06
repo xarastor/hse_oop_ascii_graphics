@@ -7,6 +7,15 @@ public class Options {
     static  float greenweight = 0.5866f;
     static float blueweight = 0.1145f;
 
+    static boolean ToConsole = false;
+    static boolean isFilled = false;
+    static boolean isSpaced = false;
+    static boolean isColored = false;
+    static boolean isDoubled = true;
+    static boolean isFlippedHorisontal = false;
+    static boolean isFlippedVertical = false;
+    static boolean isRotating = false;
+    static float RotAngle = 0;
 
 
 }
