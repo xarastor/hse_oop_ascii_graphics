@@ -36,11 +36,11 @@ public class Main {
                 "if no outputFile specified, output will be written in console\n");
     }
 
-    public  static void parseArguments(String[] args) {
+    public static boolean  parseArguments(String[] args) {
         if (args.length < 1) {
             PrintException("Couldn't find path in args", "Main");
             PrintHelp();
-            return;
+            return false;
         }
         Input = args[0];
         for (int i = 1; i < args.length; ++i) {
@@ -87,7 +87,7 @@ public class Main {
                         if (i == args.length) {
                             PrintException("Please specify angle to argument -r/--rotate. Application stopped", "Main");
                             PrintHelp();
-                            return;
+                            return false;
                         } else {
                             RotAngle = Float.parseFloat(args[i]);
                             isRotating = true;
@@ -102,20 +102,23 @@ public class Main {
                     default: {
                         PrintException("Unrecognized argument " + args[i] + ". Application stopped", "Main");
                         PrintHelp();
-                        return;
+                        return false;
                     }
                 }
             } else {
                 Output = args[i];
             }
         }
-        if (Output.equals("")) {
+        if (Output == "" || Output == null) {
             ToConsole = true;
         }
+        return true;
     }
 
     public static void main(String[] args) {
-        parseArguments(args);
+        if (!parseArguments(args)) {
+            return;
+        }
         Image image = new Image();
 
         image.ConvertToAscii(Input);
