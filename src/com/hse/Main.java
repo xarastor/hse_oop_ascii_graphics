@@ -19,6 +19,9 @@ import static com.hse.Options.RotAngle;
 
 public class Main {
 
+    static String Input;
+    static String Output;
+
     public static void PrintHelp() {
         System.out.println("Usage: java -jar jpegToAscii.jar <inputFile> [<outputFile>]\n" +
                 "[-f, --filled  - fill background]\n" +
@@ -33,10 +36,7 @@ public class Main {
                 "if no outputFile specified, output will be written in console\n");
     }
 
-    public static void main(String[] args) {
-        Image image = new Image();
-        String Input = "";
-        String Output = "";
+    public  static void parseArguments(String[] args) {
         if (args.length < 1) {
             PrintException("Couldn't find path in args", "Main");
             PrintHelp();
@@ -109,9 +109,15 @@ public class Main {
                 Output = args[i];
             }
         }
-        if (Output == "") {
+        if (Output.equals("")) {
             ToConsole = true;
         }
+    }
+
+    public static void main(String[] args) {
+        parseArguments(args);
+        Image image = new Image();
+
         image.ConvertToAscii(Input);
         if (ToConsole) {
             if (isColored)
