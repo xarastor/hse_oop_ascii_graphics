@@ -6,19 +6,18 @@ import javax.print.DocFlavor;
 
 import static com.hse.ExceptionHandler.PrintException;
 
-import static com.hse.Options.isColored;
-import static com.hse.Options.isDoubled;
-import static com.hse.Options.ToConsole;
-import static com.hse.Options.isFilled;
-import static com.hse.Options.isFlippedHorisontal;
-import static com.hse.Options.isFlippedVertical;
-import static com.hse.Options.isSpaced;
-import static com.hse.Options.isRotating;
-import static com.hse.Options.RotAngle;
-//import static com.hse.Options.isColored;
 
 public class Main {
-
+    static boolean isColored;
+    static boolean isDoubled;
+    static boolean ToConsole;
+    static boolean isFilled;
+    static boolean isFlippedHorisontal;
+    static boolean isFlippedVertical;
+    static boolean isSpaced;
+    static boolean isRotating;
+    static boolean isConcurrent;
+    static float RotAngle;
     private static String Input;
     private static String Output;
 
@@ -31,8 +30,9 @@ public class Main {
                 "[-h, --help    - show this help]\n" +
                 "[-d, --no-double    - off double char mode]\n" +
                 "[-fh, --flip-horisontally - flip image horisontally]\n" +
-                "[-fv, --flip-vertically - flip image vertically]" +
+                "[-fv, --flip-vertically - flip image vertically]\n" +
                 "[-r <angle>, --rotate <angle> - rotate image by angle\n" +
+                "[-t, --threads - use async transformations\n" +
                 "if no outputFile specified, output will be written in console\n");
     }
 
@@ -81,6 +81,11 @@ public class Main {
                         isFlippedVertical = true;
                         break;
                     }
+                    case "-t":
+                    case "--threads": {
+                        isConcurrent = true;
+                        break;
+                    }
                     case "-r":
                     case "--rotate": {
                         i++;
@@ -119,19 +124,11 @@ public class Main {
         if (!parseArguments(args)) {
             return;
         }
-        Image image = new Image();
+        ImageReader IR = new ImageReader(isFlippedHorisontal, isFlippedVertical, isRotating, isConcurrent, RotAngle);
+        ImageWriter IW = new ImageWriter(ToConsole, isFilled, isSpaced, isColored, isDoubled);
+        Image image;
+        image = IR.ConvertToAscii(Input);
+        IW.PrintImage(Output, image);
 
-        image.ConvertToAscii(Input);
-        if (ToConsole) {
-            if (isColored)
-                image.PrintColoredImageToFile(System.out);
-            else
-                image.PrintImageToFile(System.out);
-        } else {
-            if (isColored)
-                image.PrintColoredImageToFile(Output);
-            else
-                image.PrintImageToFile(Output);
-        }
     }
 }
