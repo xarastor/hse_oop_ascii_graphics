@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import static com.hse.ExceptionHandler.PrintException;
+
 /**
  * Created by titaninus on 06.02.18.
  */
@@ -94,7 +95,4 @@ public class ImageReader {
         }
         return Readed;
     }
-
-
-
 }

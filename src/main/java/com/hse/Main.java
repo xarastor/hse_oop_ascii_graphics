@@ -1,9 +1,5 @@
 package com.hse;
 
-import com.hse.Image;
-
-import javax.print.DocFlavor;
-
 import static com.hse.ExceptionHandler.PrintException;
 
 
