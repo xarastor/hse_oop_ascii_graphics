@@ -8,4 +8,5 @@ class RGB {
     int green;
     int blue;
     int grey;
+
 }
